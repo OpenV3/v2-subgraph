@@ -1,0 +1,5 @@
+{
+    "network": "ink-sepolia",
+    "UniswapV2FactoryAddress": "0x5cfE73b0238Bb3E636Dc4e68a31bEe5d7fbEa1fa",
+    "UniswapV2FactoryDeployBlock": 4410328
+}
