@@ -136,7 +136,32 @@ export function getSubgraphConfig(): SubgraphConfig {
       ],
     }
   } else if (network == INK_SEPOLIA_NETWORK_NAME) {
-    // TODO
+    return {
+      factoryAddress: '0x5cfE73b0238Bb3E636Dc4e68a31bEe5d7fbEa1fa',
+
+      // Price reference pairs
+      ethStablePairs: ['0xf609f26bbdb90e970aa551de2441ab1aff489ca1'],
+
+      wrappedNativeAddress: '0x4200000000000000000000000000000000000006', // WETH
+
+      minimumUsdThresholdNewPairs: BigDecimal.fromString('100'),
+      minimumLiquidityThresholdEth: BigDecimal.fromString('1'),
+
+      whitelistTokens: [
+        '0x4200000000000000000000000000000000000006', // WETH
+        '0x2e0321399d7e50fcbf00c2a8f4e9d91bcbd0fd25', // USDT
+      ],
+
+      stablecoinAddresses: [
+        '0x2e0321399d7e50fcbf00c2a8f4e9d91bcbd0fd25', // USDT
+      ],
+
+      untrackedPairs: [],
+
+      skipTotalSupply: [],
+
+      tokenOverrides: [],
+    }
   }
 
   throw new Error('Unsupported network')
