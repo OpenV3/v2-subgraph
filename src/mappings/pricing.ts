@@ -7,39 +7,58 @@ import { ADDRESS_ZERO, factoryContract, ONE_BD, UNTRACKED_PAIRS, ZERO_BD } from 
 
 const config = getSubgraphConfig()
 
+class StablePairData {
+  pair: Pair
+  ethReserve: BigDecimal
+  price: BigDecimal
+}
+
 const WETH_ADDRESS = config.wrappedNativeAddress
-const USDC_WETH_PAIR = config.ethUsdcPair
-const DAI_WETH_PAIR = config.ethDaiPair
-const USDT_WETH_PAIR = config.ethUsdtPair
 
 export function getEthPriceInUSD(): BigDecimal {
-  // fetch eth prices for each stablecoin
-  let daiPair = Pair.load(DAI_WETH_PAIR) // dai is token0
-  let usdcPair = Pair.load(USDC_WETH_PAIR) // usdc is token0
-  let usdtPair = Pair.load(USDT_WETH_PAIR) // usdt is token1
+  const config = getSubgraphConfig()
+  let totalLiquidityETH = ZERO_BD
+  let pairs: StablePairData[] = []
 
-  // all 3 have been created
-  if (daiPair !== null && usdcPair !== null && usdtPair !== null) {
-    let totalLiquidityETH = daiPair.reserve1.plus(usdcPair.reserve1).plus(usdtPair.reserve0)
-    let daiWeight = daiPair.reserve1.div(totalLiquidityETH)
-    let usdcWeight = usdcPair.reserve1.div(totalLiquidityETH)
-    let usdtWeight = usdtPair.reserve0.div(totalLiquidityETH)
-    return daiPair.token0Price
-      .times(daiWeight)
-      .plus(usdcPair.token0Price.times(usdcWeight))
-      .plus(usdtPair.token1Price.times(usdtWeight))
-    // dai and USDC have been created
-  } else if (daiPair !== null && usdcPair !== null) {
-    let totalLiquidityETH = daiPair.reserve1.plus(usdcPair.reserve1)
-    let daiWeight = daiPair.reserve1.div(totalLiquidityETH)
-    let usdcWeight = usdcPair.reserve1.div(totalLiquidityETH)
-    return daiPair.token0Price.times(daiWeight).plus(usdcPair.token0Price.times(usdcWeight))
-    // USDC is the only pair so far
-  } else if (usdcPair !== null) {
-    return usdcPair.token0Price
-  } else {
-    return ZERO_BD
+  // First pass: collect valid pairs and total ETH liquidity
+  for (let i = 0; i < config.ethStablePairs.length; i++) {
+    let pair = Pair.load(config.ethStablePairs[i])
+    if (pair === null) continue
+
+    let token0 = Token.load(pair.token0)
+    let token1 = Token.load(pair.token1)
+    if (token0 === null || token1 === null) continue
+
+    // Determine which token is WETH
+    let isToken0Weth = token0.id == config.wrappedNativeAddress
+    let isToken1Weth = token1.id == config.wrappedNativeAddress
+
+    // Skip if neither token is WETH
+    if (!isToken0Weth && !isToken1Weth) continue
+
+    // Get ETH reserve and price based on token position
+    let ethReserve = isToken0Weth ? pair.reserve0 : pair.reserve1
+    // Add minimum liquidity check
+    if (ethReserve.lt(config.minimumLiquidityThresholdEth)) continue
+
+    let price = isToken0Weth ? pair.token1Price : pair.token0Price
+
+    totalLiquidityETH = totalLiquidityETH.plus(ethReserve)
+    pairs.push({ pair, ethReserve, price })
   }
+
+  // Handle edge cases
+  if (pairs.length === 0) return ZERO_BD
+  if (pairs.length === 1) return pairs[0].price
+
+  // Calculate weighted average price
+  let weightedPrice = ZERO_BD
+  for (let i = 0; i < pairs.length; i++) {
+    let weight = pairs[i].ethReserve.div(totalLiquidityETH)
+    weightedPrice = weightedPrice.plus(pairs[i].price.times(weight))
+  }
+
+  return weightedPrice
 }
 
 // token where amounts should contribute to tracked volume and liquidity

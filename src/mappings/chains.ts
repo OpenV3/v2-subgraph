@@ -7,10 +7,7 @@ export class SubgraphConfig {
   // Core protocol addresses
   factoryAddress: string
 
-  // Price calculation pairs
-  ethUsdcPair: string // created 10008355
-  ethDaiPair: string // created block 10042267
-  ethUsdtPair: string // created block 10093341
+  ethStablePairs: string[] // addresses of pairs between WETH and stablecoins
 
   // Core assets
   wrappedNativeAddress: string
@@ -54,9 +51,11 @@ export function getSubgraphConfig(): SubgraphConfig {
       factoryAddress: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
 
       // Price reference pairs
-      ethUsdcPair: '0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc',
-      ethDaiPair: '0xa478c2975ab1ea89e8196811f51a7b7ade33eb11',
-      ethUsdtPair: '0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852',
+      ethStablePairs: [
+        '0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc',
+        '0xa478c2975ab1ea89e8196811f51a7b7ade33eb11',
+        '0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852',
+      ],
 
       wrappedNativeAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // WETH
 
